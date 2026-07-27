@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Travel Spending Tracker • KRW → HKD</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0b1020">
+  <style>
+    :root { --bg:#0b1020; --panel:#121935; --muted:#8ea0c6; --text:#e8eefc; --accent:#7aa2ff; --accent-2:#4bd4c6; --danger:#ff6b6b; --border:#22305a; --shadow:0 10px 24px rgba(0,0,0,.35); --radius:14px; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:
+      radial-gradient(1200px 1200px at 10% -10%, rgba(42,84,255,.18), transparent 60%),
+      radial-gradient(1000px 800px at 110% 10%, rgba(75,212,198,.18), transparent 60%),var(--bg);color:var(--text)}
+    header{position:sticky;top:0;z-index:10;backdrop-filter:blur(8px);background:linear-gradient(180deg,rgba(10,16,32,.8),rgba(10,16,32,.55));border-bottom:1px solid var(--border)}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px 18px}
+    h1{font-size:clamp(1.1rem,2.2vw,1.6rem);margin:0 0 6px}
+    .sub{color:var(--muted);font-size:.95rem}
+    .toolbar{display:grid;gap:8px;grid-template-columns:1fr;margin-top:12px}
+    @media (min-width:780px){.toolbar{grid-template-columns:auto auto 1fr auto auto auto;align-items:center}}
+    .panel{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0));border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .tabs{display:grid;grid-auto-flow:column;gap:8px;overflow-x:auto;padding:10px}
+    .tab-btn{appearance:none;border:1px solid var(--border);background:#0f1730;color:var(--text);padding:10px 12px;border-radius:12px;cursor:pointer;white-space:nowrap;transition:.1s; font-size:.95rem}
+    .tab-btn[aria-selected="true"]{background:linear-gradient(180deg,rgba(122,162,255,.15),rgba(75,212,198,.1));border-color:#3a58a8}
+    .grid{display:grid;gap:16px;padding:16px}
+    .inputs{display:grid;gap:10px;grid-template-columns:1fr 1fr 1.2fr 2fr auto}
+    @media (max-width:720px){.inputs{grid-template-columns:1fr 1fr}.inputs .span-2{grid-column:span 2}}
+    label{font-size:.82rem;color:var(--muted)}
+    input,select,textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:#0b142b;color:var(--text);outline:none}
+    textarea{resize:vertical;min-height:40px}
+    .btn{appearance:none;border:1px solid var(--border);background:#101a36;color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer;transition:.06s}
+    .btn:hover{background:#122049}.btn:active{transform:translateY(1px)}
+    .btn.primary{background:linear-gradient(180deg,#6b93ff,#4b74ff);border-color:#2e4ed6}
+    .btn.green{background:linear-gradient(180deg,#48e1d2,#2bc2b4);border-color:#1a9f92;color:#051513}
+    .btn.ghost{background:transparent}
+    .btn.danger{background:linear-gradient(180deg,#ff7c7c,#ff5a5a);border-color:#cf4040}
+    .table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--border)}
+    table{width:100%;border-collapse:collapse;min-width:680px}
+    th,td{border-bottom:1px solid var(--border);padding:10px 12px;text-align:left;font-size:.95rem}
+    th{background:#0f1834;position:sticky;top:0;z-index:1}
+    tr:hover td{background:rgba(122,162,255,.05)}
+    tfoot td{background:#0e1730;font-weight:600}
+    .right{text-align:right}.muted{color:var(--muted)}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px dashed var(--border);border-radius:999px;color:var(--muted);font-size:.85rem;background:rgba(255,255,255,.02)}
+    .flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .spacer{flex:1}.hidden{display:none !important}
+    .footer{color:var(--muted);font-size:.85rem;padding:14px 18px}
+    .ratebox{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:6px}
+    .ratebox input{width:130px}
+    .settings{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+    .totals-inline{font-weight:600}
+    /* Collapsible top area */
+    #topAreaToggle{position:absolute;top:10px;right:12px;z-index:20;background:linear-gradient(180deg,#48e1d2,#2bc2b4);border-color:#1a9f92;color:#051513}
+    .top-collapsed .top-inner{display:none}
+    .top-collapsed header .wrap{padding-top:10px;padding-bottom:10px}
+    .top-collapsed #topHint{display:inline}
+    #topHint{display:none;color:var(--muted);font-size:.9rem}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap" id="topArea">
+      <button id="topAreaToggle" class="btn green" aria-pressed="false">Hide top panel ▲</button>
+      <div class="top-inner">
+        <h1>Travel Spending Tracker</h1>
+        <div class="sub" id="weekLabel">Week: 28/07/2026 – 03/08/2026 • Input currency: KRW (₩)</div>
+
+        <!-- New: General settings for date range -->
+        <div class="settings">
+          <span class="pill">Customize date range</span>
+          <label>Start date:
+            <input id="startDate" type="date" />
+          </label>
+          <label>Days:
+            <input id="numDays" type="number" min="1" max="31" value="7" />
+          </label>
+          <button id="applyDates" class="btn primary">Apply dates</button>
+          <span class="muted">Changing dates regenerates the day tabs. Data with matching dates is kept.</span>
+        </div>
+
+        <div class="ratebox">
+          <span class="pill">HK$ totals shown automatically</span>
+          <label>KRW per 1 HK$:
+            <input id="rateKRWperHKD" type="number" min="0" step="0.0001" placeholder="e.g., 180" />
+          </label>
+          <button id="saveRate" class="btn green">Save rate</button>
+          <span class="muted">Tip: Update anytime; totals recalc instantly.</span>
+        </div>
+
+        <div class="toolbar flex" style="margin-top:10px">
+          <button id="exportCsvAll" class="btn">Export CSV (all days)</button>
+          <button id="exportJson" class="btn">Export JSON</button>
+          <label class="pill">Import JSON
+            <input id="importJson" type="file" accept="application/json" style="display:none" />
+          </label>
+          <div class="spacer"></div>
+          <button id="clearAll" class="btn danger">Clear ALL</button>
+          <span class="pill">Saved locally on this browser profile</span>
+        </div>
+      </div>
+      <span id="topHint">Top panel hidden — tap “Show top panel ▼” to reveal.</span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="panel">
+      <div class="tabs" role="tablist" aria-label="Days"></div>
+      <section id="dayContent" class="grid"></section>
+    </div>
+    <div class="footer">
+      Storage: Data is kept in this device’s localStorage for the current browser profile. Others using the same device + profile can view/edit it; it won’t sync to other devices. Use Export/Import JSON to move or back up data.
+    </div>
+  </main>
+
+  <template id="dayTemplate">
+    <div class="grid">
+      <div class="inputs">
+        <div>
+          <label for="time">Time</label>
+          <input name="time" type="time" />
+        </div>
+        <div>
+          <label for="cost">Cost (₩)</label>
+          <input name="cost" inputmode="decimal" placeholder="0" />
+        </div>
+        <div class="span-2">
+          <label for="location">Location</label>
+          <input name="location" type="text" placeholder="e.g., Museum, Café" />
+        </div>
+        <div class="span-2">
+          <label for="remarks">Remarks</label>
+          <textarea name="remarks" placeholder="Notes (ticket, tip, taxi…)"></textarea>
+        </div>
+        <div class="span-2" style="display:flex; gap:8px; align-items:end">
+          <button class="btn primary" data-action="add">Add Entry</button>
+          <button class="btn ghost" data-action="sort">Sort by Time</button>
+          <button class="btn danger" data-action="clear-day">Clear Day</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:120px">Time</th>
+              <th style="width:140px">Cost (₩)</th>
+              <th>Location</th>
+              <th>Remarks</th>
+              <th style="width:110px">Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr>
+              <td class="right">Day total:</td>
+              <td class="right" data-total-krw></td>
+              <td colspan="3" class="right muted">
+                <span class="totals-inline" data-total-hkd></span>
+                <span class="muted" data-weekly></span>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="flex">
+        <button class="btn" data-action="export-csv">Export CSV (this day)</button>
+        <span class="muted">Edit any cell in-place; totals update automatically.</span>
+        <div class="spacer"></div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    // Register service worker (works over HTTPS with service-worker.js present)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+      });
+    }
+
+    (function(){
+      const KRW='₩', HKD='HK$';
+      const els = {
+        tabs: document.querySelector('.tabs'),
+        content: document.getElementById('dayContent'),
+        tpl: document.getElementById('dayTemplate'),
+        weekLabel: document.getElementById('weekLabel'),
+        startDate: document.getElementById('startDate'),
+        numDays: document.getElementById('numDays'),
+        applyDates: document.getElementById('applyDates'),
+        clearAll: document.getElementById('clearAll'),
+        exportCsvAll: document.getElementById('exportCsvAll'),
+        exportJson: document.getElementById('exportJson'),
+        importJson: document.getElementById('importJson'),
+        rateInput: document.getElementById('rateKRWperHKD'),
+        saveRate: document.getElementById('saveRate'),
+        topToggle: document.getElementById('topAreaToggle'),
+      };
+
+      // Storage
+      const canStore = (()=>{try{localStorage.setItem('__x','1');localStorage.removeItem('__x');return true;}catch{return false}})();
+      const defaultStart = '2026-07-28';
+      const defaultDays = 7;
+
+      const state = {
+        startDate: defaultStart,
+        numDays: defaultDays,
+        rateKRWperHKD: 180,
+        days: {},   // { 'YYYY-MM-DD': [ {time,cost,location,remarks}, ... ] }
+        topHidden: false,
+      };
+
+      // Load
+      if (canStore) {
+        const raw = localStorage.getItem('travel-tracker-flex-v1');
+        if (raw) { try { Object.assign(state, JSON.parse(raw)); } catch {} }
+      }
+      if (!Object.keys(state.days).length) {
+        for (const d of makeDayKeys(state.startDate, state.numDays)) state.days[d]=[];
+      }
+
+      // Helpers
+      const csvEsc = v => {const s=String(v??'');return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+      const parseMoneyKrw = v => Number(String(v).replace(/[^0-9.\-]/g,'')) || 0;
+      const fmtKrw = n => `${KRW}${Math.round(n).toLocaleString()}`;
+      const fmtHkd = n => `${HKD}${n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+      const toHKD = krw => (Number(state.rateKRWperHKD)||1) ? krw/Number(state.rateKRWperHKD) : krw;
+      const ddmmyyyy = (iso) => {
+        const d = new Date(iso+'T00:00:00');
+        const dd = String(d.getDate()).padStart(2,'0');
+        const mm = String(d.getMonth()+1).padStart(2,'0');
+        const yyyy = d.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
+      };
+      function makeDayKeys(startISO, n) {
+        const out=[]; const start = new Date(startISO+'T00:00:00');
+        for (let i=0;i<n;i++){ const d=new Date(start); d.setDate(d.getDate()+i); out.push(d.toISOString().slice(0,10)); }
+        return out;
+      }
+      function makeDaysMeta() {
+        const keys = makeDayKeys(state.startDate, state.numDays);
+        return keys.map((k,i)=>({key:k,label:`Day ${i+1} — ${ddmmyyyy(k)}`}));
+      }
+      function updateWeekLabel() {
+        const keys = makeDayKeys(state.startDate, state.numDays);
+        const start = ddmmyyyy(keys[0]);
+        const end = ddmmyyyy(keys[keys.length-1]);
+        els.weekLabel.textContent = `Dates: ${start} – ${end} • Input currency: KRW (₩)`;
+      }
+      function persist(){ if (canStore) localStorage.setItem('travel-tracker-flex-v1', JSON.stringify(state)); updateAllWeeklyTotals(); }
+
+      // Build UI from state
+      let dayPanels = [];
+      function rebuildTabsAndPanels(selectIndex=0){
+        // tabs
+        els.tabs.innerHTML=''; els.content.innerHTML='';
+        const DAYS = makeDaysMeta();
+        // ensure state.days has keys; keep existing data for overlapping keys
+        const newDays = {};
+        for (const d of DAYS) newDays[d.key] = state.days[d.key] || [];
+        state.days = newDays;
+
+        DAYS.forEach((d,idx)=>{
+          const b=document.createElement('button');
+          b.className='tab-btn'; b.role='tab'; b.id=`tab-${d.key}`; b.setAttribute('aria-controls',`panel-${d.key}`);
+          b.textContent=d.label; b.addEventListener('click',()=>selectDay(idx));
+          els.tabs.appendChild(b);
+
+          const panel = makeDayPanel(d.key);
+          els.content.appendChild(panel.root);
+          dayPanels.push(panel);
+        });
+        selectDay(Math.min(selectIndex, dayPanels.length-1));
+        updateWeekLabel();
+      }
+
+      function makeDayPanel(dayKey){
+        const node = els.tpl.content.cloneNode(true);
+        const root = node.querySelector('.grid');
+        root.id=`panel-${dayKey}`; root.setAttribute('role','tabpanel');
+
+        const addBtn = node.querySelector('[data-action="add"]');
+        const sortBtn = node.querySelector('[data-action="sort"]');
+        const clearBtn= node.querySelector('[data-action="clear-day"]');
+        const exportCsvBtn = node.querySelector('[data-action="export-csv"]');
+        const inputs = {
+          time: node.querySelector('input[name="time"]'),
+          cost: node.querySelector('input[name="cost"]'),
+          location: node.querySelector('input[name="location"]'),
+          remarks: node.querySelector('textarea[name="remarks"]'),
+        };
+        const tbody = node.querySelector('tbody');
+        const totalKrwCell = node.querySelector('[data-total-krw]');
+        const totalHkdCell = node.querySelector('[data-total-hkd]');
+        const weeklyCell = node.querySelector('[data-weekly]');
+
+        function renderRows(){
+          tbody.innerHTML='';
+          let totalKRW=0;
+          for (const [i,r] of state.days[dayKey].entries()){
+            const tr=document.createElement('tr');
+            const mkCell=(txt,on)=>{const td=document.createElement('td'); const span=document.createElement('span'); span.textContent=txt||''; span.contentEditable='true'; span.spellcheck=true; span.addEventListener('blur',()=>{on(span.textContent.trim()); persist(); renderRows();}); td.appendChild(span); return td;};
+            const tdTime=mkCell(r.time, v=>r.time=v);
+            const tdCost=mkCell(r.cost, v=>r.cost=v); tdCost.classList.add('right');
+            const tdLoc =mkCell(r.location, v=>r.location=v);
+            const tdRem =mkCell(r.remarks, v=>r.remarks=v);
+            const tdAct=document.createElement('td'); const del=document.createElement('button'); del.className='btn danger'; del.textContent='Delete'; del.addEventListener('click',()=>{state.days[dayKey].splice(i,1); persist(); renderRows();}); tdAct.appendChild(del);
+            [tdTime,tdCost,tdLoc,tdRem,tdAct].forEach(td=>tr.appendChild(td));
+            tbody.appendChild(tr);
+            totalKRW += parseMoneyKrw(r.cost);
+          }
+          totalKrwCell.textContent = fmtKrw(totalKRW);
+          totalHkdCell.textContent = `≈ ${fmtHkd(toHKD(totalKRW))} (at ${state.rateKRWperHKD} KRW/HK$)`;
+          weeklyCell.textContent = ' • Weekly totals shown on any tab';
+        }
+
+        addBtn.addEventListener('click',()=>{
+          const time=inputs.time.value||'';
+          const cost=inputs.cost.value.trim();
+          const location=inputs.location.value.trim();
+          const remarks=inputs.remarks.value.trim();
+          if(!cost && !location && !remarks && !time) return;
+          state.days[dayKey].push({time,cost,location,remarks});
+          inputs.time.value=''; inputs.cost.value=''; inputs.location.value=''; inputs.remarks.value='';
+          persist(); renderRows();
+        });
+
+        sortBtn.addEventListener('click',()=>{
+          const pad=t=>t? t.padStart(5,'0') : '99:99';
+          state.days[dayKey].sort((a,b)=>pad(a.time).localeCompare(pad(b.time)));
+          persist(); renderRows();
+        });
+
+        clearBtn.addEventListener('click',()=>{
+          if(!confirm('Clear all entries for this day?')) return;
+          state.days[dayKey]=[]; persist(); renderRows();
+        });
+
+        exportCsvBtn.addEventListener('click',()=>{
+          const rows=state.days[dayKey];
+          const header=['Time','Cost (KRW)','Location','Remarks'];
+          const body=rows.map(r=>[r.time,r.cost,csvEsc(r.location),csvEsc(r.remarks)].join(','));
+          download(header.join(',')+'\n'+body.join('\n'), `spending-${dayKey}.csv`, 'text/csv');
+        });
+
+        renderRows();
+        return { root, refresh: renderRows };
+      }
+
+      function selectDay(i){
+        [...els.tabs.children].forEach((b,idx)=>b.setAttribute('aria-selected', idx===i));
+        [...els.content.children].forEach((p,idx)=>p.classList.toggle('hidden', idx!==i));
+        updateAllWeeklyTotals();
+      }
+
+      function updateAllWeeklyTotals(){
+        const all = Object.values(state.days).flat();
+        const sumKRW = all.reduce((acc,r)=>acc+parseMoneyKrw(r.cost),0);
+        const sumHKD = toHKD(sumKRW);
+        const visible=[...els.content.children].find(el=>!el.classList.contains('hidden'));
+        if(!visible) return;
+        const cell=visible.querySelector('[data-weekly]');
+        if(cell) cell.textContent=` • Week total: ${fmtKrw(sumKRW)} ≈ ${fmtHkd(sumHKD)}`;
+      }
+
+      function download(data, filename, mime){
+        const blob=new Blob([data],{type:mime});
+        const url=URL.createObjectURL(blob);
+        const a=Object.assign(document.createElement('a'),{href:url,download:filename});
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      }
+
+      // Initialize controls
+      els.startDate.value = state.startDate;
+      els.numDays.value = state.numDays;
+      els.rateInput.value = state.rateKRWperHKD;
+
+      els.applyDates.addEventListener('click',()=>{
+        const start = els.startDate.value || state.startDate;
+        const ndays = Math.max(1, Math.min(31, Number(els.numDays.value)||state.numDays));
+        // Rebuild keeping overlapping data
+        state.startDate = start;
+        state.numDays = ndays;
+        dayPanels=[]; rebuildTabsAndPanels(0); persist();
+      });
+
+      document.getElementById('saveRate').addEventListener('click',()=>{
+        const v=Number(els.rateInput.value);
+        if(!(v>0)){ alert('Enter a positive number for KRW per 1 HK$.'); return; }
+        state.rateKRWperHKD=v; persist(); dayPanels.forEach(p=>p.refresh());
+      });
+      els.rateInput.addEventListener('change',()=>document.getElementById('saveRate').click());
+
+      document.getElementById('clearAll').addEventListener('click',()=>{
+        if(!confirm('This will remove all entries for all days. Continue?')) return;
+        for (const k of Object.keys(state.days)) state.days[k]=[];
+        persist(); dayPanels.forEach(p=>p.refresh());
+      });
+
+      document.getElementById('exportCsvAll').addEventListener('click',()=>{
+        const parts=[]; const DAYS=makeDaysMeta();
+        for(const d of DAYS){
+          parts.push(d.label);
+          parts.push('Time,Cost (KRW),Location,Remarks');
+          parts.push(...(state.days[d.key]||[]).map(r=>[r.time,r.cost,csvEsc(r.location),csvEsc(r.remarks)].join(',')));
+          parts.push('');
+        }
+        const range = `${ddmmyyyy(DAYS[0].key)}_to_${ddmmyyyy(DAYS[DAYS.length-1].key)}`.replace(/\//g,'-');
+        download(parts.join('\n'), `spending-${range}.csv`, 'text/csv');
+      });
+
+      document.getElementById('exportJson').addEventListener('click',()=>{
+        download(JSON.stringify(state,null,2), 'spending-tracker.json', 'application/json');
+      });
+
+      document.getElementById('importJson').addEventListener('change',(e)=>{
+        const file=e.target.files[0]; if(!file) return;
+        const reader=new FileReader();
+        reader.onload=()=>{
+          try{
+            const data=JSON.parse(reader.result);
+            if (data.startDate) state.startDate=data.startDate;
+            if (data.numDays) state.numDays=data.numDays;
+            if (data.days) state.days=data.days;
+            if (data.rateKRWperHKD) state.rateKRWperHKD=data.rateKRWperHKD;
+            if (typeof data.topHidden==='boolean') state.topHidden=data.topHidden;
+            els.startDate.value=state.startDate; els.numDays.value=state.numDays; els.rateInput.value=state.rateKRWperHKD;
+            dayPanels=[]; rebuildTabsAndPanels(0); applyTopHidden(); persist(); dayPanels.forEach(p=>p.refresh());
+            alert('Import successful.');
+          }catch{ alert('Invalid JSON file.'); }
+        };
+        reader.readAsText(file);
+      });
+
+      // Hide/show top area
+      function applyTopHidden(){
+        document.body.classList.toggle('top-collapsed', !!state.topHidden);
+        const btn=els.topToggle, hint=document.getElementById('topHint'), pressed=!!state.topHidden;
+        btn.setAttribute('aria-pressed', String(pressed));
+        btn.textContent = pressed ? 'Show top panel ▼' : 'Hide top panel ▲';
+        hint.style.display = pressed ? 'inline' : 'none';
+      }
+      els.topToggle.addEventListener('click',()=>{ state.topHidden=!state.topHidden; applyTopHidden(); persist(); });
+
+      // First build
+      applyTopHidden();
+      dayPanels=[]; rebuildTabsAndPanels(0); updateWeekLabel(); persist();
+    })();
+  </script>
+</body>
+</html>
